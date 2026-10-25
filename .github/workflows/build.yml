@@ -27,6 +27,18 @@ jobs:
           path: ea
           submodules: recursive
 
+      - name: Apply compile fixes
+        shell: bash
+        run: |
+          # patches/<name>.patch applies inside the matching submodule (ea.patch: the main repo)
+          declare -A dirs=([ea]=ea [classes]=ea/src/include/classes [strategies]=ea/src/strategies
+                           [strategies-meta]=ea/src/strategies-meta [indicators-other]=ea/src/indicators/Other)
+          for f in patches/*.patch; do
+            name=$(basename "$f" .patch)
+            echo "applying $f in ${dirs[$name]}"
+            git -C "${dirs[$name]}" apply --whitespace=nowarn "$GITHUB_WORKSPACE/$f"
+          done
+
       - name: Install MetaTrader 5 (MetaEditor)
         shell: pwsh
         run: |
@@ -42,14 +54,21 @@ jobs:
         run: |
           $editor = "C:\Program Files\MetaTrader 5\metaeditor64.exe"
           $src = (Resolve-Path ea\src).Path
+          $global:errors = @()
           function Compile($file) {
             $log = [IO.Path]::ChangeExtension($file, ".log")
             Start-Process -FilePath $editor -Wait -NoNewWindow -ArgumentList @("/compile:`"$file`"", "/inc:`"$src`"", "/log:`"$log`"")
             $text = if (Test-Path $log) { Get-Content $log -Encoding Unicode -Raw } else { "no log" }
-            Write-Host "===== $file"
-            $text -split "`r?`n" | Where-Object { $_ -match " error |result" } | Select-Object -First 40 | ForEach-Object { Write-Host $_ }
+            $result = ($text -split "`r?`n" | Where-Object { $_ -match "^Result" }) -join ""
+            Write-Host "===== $(Split-Path $file -Leaf): $result"
+            $global:errors += $text -split "`r?`n" | Where-Object { $_ -match " : error " } | ForEach-Object { $_.Replace("$src\", "") }
             $ex5 = [IO.Path]::ChangeExtension($file, ".ex5")
             return (Test-Path $ex5) -and -not ($text -match "[1-9]\d* errors?")
+          }
+          function ShowErrors() {
+            $unique = $global:errors | Sort-Object -Unique
+            Write-Host "===== $($unique.Count) unique errors"
+            $unique | Select-Object -First 400 | ForEach-Object { Write-Host "ERR $_" }
           }
 
           # the indicators include <EA31337-classes/...>; upstream CI provides the class library under that name
@@ -64,7 +83,6 @@ jobs:
           foreach ($i in $indicators) {
             if (-not (Compile "$src\indicators\$i.mq5")) { $failed += $i }
           }
-          if ($failed.Count -gt 0) { throw "Indicators failed: $($failed -join ', ')" }
 
           # one build per edition; mode.h is the upstream switch between them
           $mode = "$src\include\common\mode.h"
@@ -85,7 +103,8 @@ jobs:
           }
           Set-Content $mode $original -NoNewline
           Get-ChildItem dist | Select-Object Name, Length
-          if ($failed.Count -gt 0) { throw "Editions failed: $($failed -join ', ')" }
+          ShowErrors
+          if ($failed.Count -gt 0) { throw "Failed: $($failed -join ', ')" }
           Copy-Item README.md dist\
           Copy-Item ea\LICENSE dist\LICENSE
           Compress-Archive -Path dist\* -DestinationPath EA31337-mt5.zip
