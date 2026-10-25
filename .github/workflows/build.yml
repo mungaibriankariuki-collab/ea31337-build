@@ -52,6 +52,9 @@ jobs:
             return (Test-Path $ex5) -and -not ($text -match "[1-9]\d* errors?")
           }
 
+          # the indicators include <EA31337-classes/...>; upstream CI provides the class library under that name
+          Copy-Item -Recurse "$src\include\classes" "$src\include\EA31337-classes"
+
           # custom indicators the EA embeds as resources
           $indicators = @(
             "Other\Misc\ATR_MA_Trend", "Other\Oscillators\Multi\Elliott_Wave_Oscillator2", "Other\Price\Range\SAWA",
