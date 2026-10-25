@@ -17,6 +17,9 @@ jobs:
   compile:
     runs-on: windows-latest
     steps:
+      - name: Keep LF line endings so the patches apply
+        run: git config --global core.autocrlf false
+
       - uses: actions/checkout@v4
 
       - name: Check out EA31337 with all submodules
