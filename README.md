@@ -1,8 +1,12 @@
 # EA31337 for MT5 (compiled)
 
 Compiled `.ex5` builds of [EA31337](https://github.com/EA31337/EA31337), the open-source multi-strategy Forex
-robot, made from upstream commit `9b9bd38` (master, September 2024). The source is not modified: GitHub Actions
-checks out EA31337 with all its submodules and compiles it with MetaEditor.
+robot, made from upstream commit `9b9bd38` (master, September 2024). GitHub Actions checks out EA31337 with all its
+submodules, applies `patches/compile-fixes.patch` and compiles it with the current MetaEditor.
+
+The upstream code no longer compiles on current MetaEditor builds (the newer MQL5 compiler is stricter), and the old
+MetaEditor upstream used is no longer available. The patch only fixes compile errors and changes no trading logic;
+[`patches/README.md`](patches/README.md) lists each fix.
 
 ## Editions
 
