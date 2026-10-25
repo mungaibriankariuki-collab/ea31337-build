@@ -32,15 +32,8 @@ jobs:
 
       - name: Apply compile fixes
         shell: bash
-        run: |
-          # patches/<name>.patch applies inside the matching submodule (ea.patch: the main repo)
-          declare -A dirs=([ea]=ea [classes]=ea/src/include/classes [strategies]=ea/src/strategies
-                           [strategies-meta]=ea/src/strategies-meta [indicators-other]=ea/src/indicators/Other)
-          for f in patches/*.patch; do
-            name=$(basename "$f" .patch)
-            echo "applying $f in ${dirs[$name]}"
-            git -C "${dirs[$name]}" apply --whitespace=nowarn "$GITHUB_WORKSPACE/$f"
-          done
+        # patches span the nested submodules, so they are applied as plain diffs from the EA31337 root
+        run: for f in patches/*.patch; do echo "applying $f"; patch -d ea -p1 --forward < "$f"; done
 
       - name: Install MetaTrader 5 (MetaEditor)
         shell: pwsh
@@ -64,7 +57,7 @@ jobs:
             $text = if (Test-Path $log) { Get-Content $log -Encoding Unicode -Raw } else { "no log" }
             $result = ($text -split "`r?`n" | Where-Object { $_ -match "^Result" }) -join ""
             Write-Host "===== $(Split-Path $file -Leaf): $result"
-            $global:errors += $text -split "`r?`n" | Where-Object { $_ -match " : error " } | ForEach-Object { $_.Replace("$src\", "") }
+            $global:errors += $text -split "`r?`n" | Where-Object { $_ -match "error \d+:" } | ForEach-Object { $_.Replace("$src\", "") }
             $ex5 = [IO.Path]::ChangeExtension($file, ".ex5")
             return (Test-Path $ex5) -and -not ($text -match "[1-9]\d* errors?")
           }
@@ -81,7 +74,7 @@ jobs:
           $indicators = @(
             "Other\Misc\ATR_MA_Trend", "Other\Oscillators\Multi\Elliott_Wave_Oscillator2", "Other\Price\Range\SAWA",
             "Other\Price\SuperTrend", "Other\Oscillators\Multi\SVE_Bollinger_Bands",
-            "Other\Price\Range\TMA+CG_mladen_NRP", "Other\Price\Range\TMA_True")
+            "Other\Price\Range\TMA_CG_mladen_NRP", "Other\Price\Range\TMA_True")
           $failed = @()
           foreach ($i in $indicators) {
             if (-not (Compile "$src\indicators\$i.mq5")) { $failed += $i }

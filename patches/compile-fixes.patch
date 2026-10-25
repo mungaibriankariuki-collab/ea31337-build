@@ -1,0 +1,369 @@
+Submodule src/include/classes contains modified content
+diff --git a/src/include/classes/DateTime.mqh b/src/include/classes/DateTime.mqh
+index 49502d5..5f69840 100644
+--- a/src/include/classes/DateTime.mqh
++++ b/src/include/classes/DateTime.mqh
+@@ -62,7 +62,7 @@ class DateTime {
+    */
+   DateTime() { TimeToStruct(TimeCurrent(), dt_curr); }
+   DateTime(DateTimeEntry &_dt) { dt_curr = _dt; }
+-  DateTime(MqlDateTime &_dt) { dt_curr = _dt; }
++  DateTime(MqlDateTime &_dt) { dt_curr.Set(_dt); }
+   DateTime(datetime _dt) { dt_curr.Set(_dt); }
+ 
+   /**
+diff --git a/src/include/classes/DateTime.struct.h b/src/include/classes/DateTime.struct.h
+index e961670..409652b 100644
+--- a/src/include/classes/DateTime.struct.h
++++ b/src/include/classes/DateTime.struct.h
+@@ -301,7 +301,14 @@ struct DateTimeEntry : MqlDateTime {
+   }
+   // Set date and time.
+   void Set(MqlDateTime& _time) {
+-    THIS_REF = _time;
++    year = _time.year;
++    mon = _time.mon;
++    day = _time.day;
++    hour = _time.hour;
++    min = _time.min;
++    sec = _time.sec;
++    day_of_week = _time.day_of_week;
++    day_of_year = _time.day_of_year;
+     // @fixit Should also set day of week.
+   }
+   void SetDayOfMonth(int _value) {
+diff --git a/src/include/classes/Dict.mqh b/src/include/classes/Dict.mqh
+index 26bd970..d1e1ef0 100644
+--- a/src/include/classes/Dict.mqh
++++ b/src/include/classes/Dict.mqh
+@@ -46,6 +46,11 @@ class DictIterator : public DictIteratorBase<K, V> {
+    * Copy constructor.
+    */
+   DictIterator(const DictIterator& right) : DictIteratorBase(right) {}
++
++  /**
++   * Conversion from the base iterator returned by Begin().
++   */
++  DictIterator(const DictIteratorBase<K, V>& right) : DictIteratorBase(right) {}
+ };
+ 
+ /**
+@@ -119,7 +124,7 @@ class Dict : public DictBase<K, V> {
+   V operator[](K key) {
+     if (_mode == DictModeList) return GetSlot((unsigned int)key).value;
+ 
+-    int position;
++    unsigned int position;
+     DictSlot<K, V>* slot = GetSlotByKey(_DictSlots_ref, key, position);
+ 
+     if (!slot) return (V)NULL;
+diff --git a/src/include/classes/DictObject.mqh b/src/include/classes/DictObject.mqh
+index 59ba041..271b76c 100644
+--- a/src/include/classes/DictObject.mqh
++++ b/src/include/classes/DictObject.mqh
+@@ -46,6 +46,11 @@ class DictObjectIterator : public DictIteratorBase<K, V> {
+    */
+   DictObjectIterator(const DictObjectIterator& right) : DictIteratorBase(right) {}
+ 
++  /**
++   * Conversion from the base iterator returned by Begin().
++   */
++  DictObjectIterator(const DictIteratorBase<K, V>& right) : DictIteratorBase(right) {}
++
+   V* Value() { return &_dict.GetSlot(_slotIdx).value; }
+ };
+ 
+diff --git a/src/include/classes/DictStruct.mqh b/src/include/classes/DictStruct.mqh
+index b4cb0d7..28c11ca 100644
+--- a/src/include/classes/DictStruct.mqh
++++ b/src/include/classes/DictStruct.mqh
+@@ -136,7 +136,7 @@ class DictStruct : public DictBase<K, V> {
+   V operator[](K key) {
+     DictSlot<K, V>* slot;
+ 
+-    int position;
++    unsigned int position;
+ 
+     if (_mode == DictModeList)
+       slot = GetSlot((unsigned int)key);
+diff --git a/src/include/classes/Indicator.mqh b/src/include/classes/Indicator.mqh
+index b5b0f3c..d418484 100644
+--- a/src/include/classes/Indicator.mqh
++++ b/src/include/classes/Indicator.mqh
+@@ -680,7 +680,7 @@ class Indicator : public IndicatorBase {
+   /**
+    * Sets indicator's params.
+    */
+-  void SetParams(IndicatorParams& _iparams) { iparams = _iparams; }
++  void SetParams(TS& _iparams) { iparams = _iparams; }
+ 
+   /**
+    * Sets indicator's symbol.
+diff --git a/src/include/classes/Order.struct.h b/src/include/classes/Order.struct.h
+index d2bda53..4101d0a 100644
+--- a/src/include/classes/Order.struct.h
++++ b/src/include/classes/Order.struct.h
+@@ -928,7 +928,25 @@ struct OrderStatic {
+  * Usage: SerializerConverter::FromObject(MqlTradeRequestProxy(_request)).ToString<SerializerJson>());
+  */
+ struct MqlTradeRequestProxy : MqlTradeRequest {
+-  MqlTradeRequestProxy(MqlTradeRequest &r) { THIS_REF = r; }
++  MqlTradeRequestProxy(MqlTradeRequest &r) {
++    action = r.action;
++    magic = r.magic;
++    order = r.order;
++    symbol = r.symbol;
++    volume = r.volume;
++    price = r.price;
++    stoplimit = r.stoplimit;
++    sl = r.sl;
++    tp = r.tp;
++    deviation = r.deviation;
++    type = r.type;
++    type_filling = r.type_filling;
++    type_time = r.type_time;
++    expiration = r.expiration;
++    comment = r.comment;
++    position = r.position;
++    position_by = r.position_by;
++  }
+ 
+   SerializerNodeType Serialize(Serializer &s) {
+     s.PassEnum(THIS_REF, "action", action);
+@@ -958,7 +976,18 @@ struct MqlTradeRequestProxy : MqlTradeRequest {
+  * Usage: SerializerConverter::FromObject(MqlTradeResultProxy(_request)).ToString<SerializerJson>());
+  */
+ struct MqlTradeResultProxy : MqlTradeResult {
+-  MqlTradeResultProxy(MqlTradeResult &r) { THIS_REF = r; }
++  MqlTradeResultProxy(MqlTradeResult &r) {
++    retcode = r.retcode;
++    deal = r.deal;
++    order = r.order;
++    volume = r.volume;
++    price = r.price;
++    bid = r.bid;
++    ask = r.ask;
++    comment = r.comment;
++    request_id = r.request_id;
++    retcode_external = r.retcode_external;
++  }
+ 
+   SerializerNodeType Serialize(Serializer &s) {
+     s.Pass(THIS_REF, "retcode", retcode);
+diff --git a/src/include/classes/Pattern.struct.h b/src/include/classes/Pattern.struct.h
+index 2297c7c..56f0acd 100644
+--- a/src/include/classes/Pattern.struct.h
++++ b/src/include/classes/Pattern.struct.h
+@@ -180,6 +180,8 @@ struct PatternCandle1 : PatternCandle {
+     }
+   }
+   // Calculation methods.
++  // Re-expose the bitwise check hidden by the static overload below.
++  bool CheckPattern(int _flags) const { return PatternCandle::CheckPattern(_flags); }
+   static bool CheckPattern(ENUM_PATTERN_1CANDLE _enum, const BarOHLC& _c) {
+     switch (_enum) {
+       case PATTERN_1CANDLE_BEAR:
+@@ -303,6 +305,8 @@ struct PatternCandle2 : PatternCandle {
+     }
+   }
+   // Calculation methods.
++  // Re-expose the bitwise check hidden by the static overload below.
++  bool CheckPattern(int _flags) const { return PatternCandle::CheckPattern(_flags); }
+   static bool CheckPattern(ENUM_PATTERN_2CANDLE _enum, const BarOHLC& _c[]) {
+     switch (_enum) {
+       case PATTERN_2CANDLE_BEARS:
+@@ -412,6 +416,8 @@ struct PatternCandle3 : PatternCandle {
+     }
+   }
+   // Calculation methods.
++  // Re-expose the bitwise check hidden by the static overload below.
++  bool CheckPattern(int _flags) const { return PatternCandle::CheckPattern(_flags); }
+   static bool CheckPattern(ENUM_PATTERN_3CANDLE _enum, const BarOHLC& _c[]) {
+     switch (_enum) {
+       case PATTERN_3CANDLE_BEARS:
+@@ -528,6 +534,8 @@ struct PatternCandle4 : PatternCandle {
+     }
+   }
+   // Calculation methods.
++  // Re-expose the bitwise check hidden by the static overload below.
++  bool CheckPattern(int _flags) const { return PatternCandle::CheckPattern(_flags); }
+   static bool CheckPattern(ENUM_PATTERN_4CANDLE _enum, const BarOHLC& _c[]) {
+     PatternCandle3 _c3(_c);
+     switch (_enum) {
+@@ -694,6 +702,8 @@ struct PatternCandle5 : PatternCandle {
+     }
+   }
+   // Calculation methods.
++  // Re-expose the bitwise check hidden by the static overload below.
++  bool CheckPattern(int _flags) const { return PatternCandle::CheckPattern(_flags); }
+   static bool CheckPattern(ENUM_PATTERN_5CANDLE _enum, const BarOHLC& _c[]) {
+     switch (_enum) {
+       case PATTERN_5CANDLE_BODY0_DIFF_PEAK:
+@@ -845,6 +855,8 @@ struct PatternCandle6 : PatternCandle {
+     }
+   }
+   // Calculation methods.
++  // Re-expose the bitwise check hidden by the static overload below.
++  bool CheckPattern(int _flags) const { return PatternCandle::CheckPattern(_flags); }
+   static bool CheckPattern(ENUM_PATTERN_6CANDLE _enum, const BarOHLC& _c[]) {
+     switch (_enum) {
+       case PATTERN_6CANDLE_NONE:
+@@ -864,6 +876,8 @@ struct PatternCandle7 : PatternCandle {
+     }
+   }
+   // Calculation methods.
++  // Re-expose the bitwise check hidden by the static overload below.
++  bool CheckPattern(int _flags) const { return PatternCandle::CheckPattern(_flags); }
+   static bool CheckPattern(ENUM_PATTERN_7CANDLE _enum, const BarOHLC& _c[]) {
+     switch (_enum) {
+       case PATTERN_7CANDLE_NONE:
+@@ -883,6 +897,8 @@ struct PatternCandle8 : PatternCandle {
+     }
+   }
+   // Calculation methods.
++  // Re-expose the bitwise check hidden by the static overload below.
++  bool CheckPattern(int _flags) const { return PatternCandle::CheckPattern(_flags); }
+   static bool CheckPattern(ENUM_PATTERN_8CANDLE _enum, const BarOHLC& _c[]) {
+     switch (_enum) {
+       case PATTERN_8CANDLE_NONE:
+@@ -902,6 +918,8 @@ struct PatternCandle9 : PatternCandle {
+     }
+   }
+   // Calculation methods.
++  // Re-expose the bitwise check hidden by the static overload below.
++  bool CheckPattern(int _flags) const { return PatternCandle::CheckPattern(_flags); }
+   static bool CheckPattern(ENUM_PATTERN_9CANDLE _enum, const BarOHLC& _c[]) {
+     switch (_enum) {
+       case PATTERN_9CANDLE_NONE:
+@@ -921,6 +939,8 @@ struct PatternCandle10 : PatternCandle {
+     }
+   }
+   // Calculation methods.
++  // Re-expose the bitwise check hidden by the static overload below.
++  bool CheckPattern(int _flags) const { return PatternCandle::CheckPattern(_flags); }
+   static bool CheckPattern(ENUM_PATTERN_10CANDLE _enum, const BarOHLC& _c[]) {
+     switch (_enum) {
+       case PATTERN_10CANDLE_NONE:
+diff --git a/src/include/classes/Storage/Objects.h b/src/include/classes/Storage/Objects.h
+index 9a31260..8b5ba9b 100644
+--- a/src/include/classes/Storage/Objects.h
++++ b/src/include/classes/Storage/Objects.h
+@@ -49,7 +49,7 @@ class Objects {
+    * Tries to retrieve pointer to object for a given key. Returns true if object did exist.
+    */
+   static bool TryGet(string& key, C*& out_ptr) {
+-    int position;
++    unsigned int position;
+     if (!GetObjects().KeyExists(key, position)) {
+       out_ptr = NULL;
+       return false;
+diff --git a/src/include/classes/Storage/ObjectsCache.h b/src/include/classes/Storage/ObjectsCache.h
+index 0ca816f..b9af91d 100644
+--- a/src/include/classes/Storage/ObjectsCache.h
++++ b/src/include/classes/Storage/ObjectsCache.h
+@@ -64,7 +64,7 @@ class ObjectsCache {
+    * Tries to retrieve pointer to object for a given key. Returns true if object did exist.
+    */
+   static bool TryGet(string& key, C*& out_ptr) {
+-    int position;
++    unsigned int position;
+     if (!GetObjects().KeyExists(key, position)) {
+       out_ptr = NULL;
+       return false;
+diff --git a/src/include/common/define.h b/src/include/common/define.h
+index 2df329b..99bf6da 100644
+--- a/src/include/common/define.h
++++ b/src/include/common/define.h
+@@ -61,5 +61,5 @@
+ #define INDI_SAWA_PATH "indicators\\Other\\Price\\Range\\SAWA"
+ #define INDI_SUPERTREND_PATH "indicators\\Other\\Price\\SuperTrend"
+ #define INDI_SVEBB_PATH "indicators\\Other\\Oscillators\\Multi\\SVE_Bollinger_Bands"
+-#define INDI_TMA_CG_PATH "indicators\\Other\\Price\\Range\\TMA+CG_mladen_NRP"
++#define INDI_TMA_CG_PATH "indicators\\Other\\Price\\Range\\TMA_CG_mladen_NRP"
+ #define INDI_TMA_TRUE_PATH "indicators\\Other\\Price\\Range\\TMA_True"
+Submodule src/indicators contains modified content
+Submodule Other contains modified content
+diff --git a/src/indicators/Other/Price/Range/TMA_CG_mladen_NRP.mq5 b/src/indicators/Other/Price/Range/TMA_CG_mladen_NRP.mq5
+new file mode 100644
+index 0000000..743679c
+--- /dev/null
++++ b/src/indicators/Other/Price/Range/TMA_CG_mladen_NRP.mq5
+@@ -0,0 +1,64 @@
++/**
++ * @file
++ * Implements indicator under MQL5.
++ */
++
++// Defines indicator properties.
++#property indicator_chart_window
++#property indicator_buffers 7
++#property indicator_plots 5
++#property indicator_color1 clrNONE
++#property indicator_color2 Coral
++#property indicator_color3 Coral
++#property indicator_color4 Green
++#property indicator_color5 Maroon
++#property indicator_width1 1
++#property indicator_width2 2
++#property indicator_width3 2
++#property indicator_width4 2
++#property indicator_width5 2
++
++// Includes EA31337 framework.
++#include <EA31337-classes/Indicator.mqh>
++#include <EA31337-classes/Indicators/Indi_ATR.mqh>
++#include <EA31337-classes/Indicators/Indi_MA.mqh>
++
++// Defines macros.
++//#define __debug__
++#define extern input
++#define Bars fmin(2000, (ChartStatic::iBars(_Symbol, _Period)))
++#define iCustom iCustom5
++
++// Includes the main file.
++#include "TMA+CG_mladen_NRP.mq4"
++
++// Custom indicator initialization function.
++void OnInit() {
++  init();
++
++  bool as_series = true;
++
++  ArraySetAsSeries(tmBuffer, as_series);
++  ArraySetAsSeries(upBuffer, as_series);
++  ArraySetAsSeries(dnBuffer, as_series);
++  ArraySetAsSeries(dnArrow, as_series);
++  ArraySetAsSeries(upArrow, as_series);
++  ArraySetAsSeries(wuBuffer, as_series);
++  ArraySetAsSeries(wdBuffer, as_series);
++
++  PlotIndexSetInteger(0, PLOT_DRAW_BEGIN, AtrPeriod);
++  PlotIndexSetInteger(1, PLOT_DRAW_BEGIN, AtrPeriod);
++  PlotIndexSetInteger(2, PLOT_DRAW_BEGIN, AtrPeriod);
++
++  SetIndexStyle(0, DRAW_LINE);
++  SetIndexStyle(1, DRAW_LINE);
++  SetIndexStyle(2, DRAW_LINE);
++}
++
++// Custom indicator iteration function.
++int OnCalculate(const int rates_total, const int prev_calculated,
++                const int begin, const double &price[]) {
++  IndicatorCounted(fmin(prev_calculated, Bars));
++  ResetLastError();
++  return start() >= 0 ? rates_total : 0;
++}
+Submodule src/strategies contains modified content
+Submodule Retracement contains modified content
+diff --git a/src/strategies/Retracement/Stg_Retracement.mqh b/src/strategies/Retracement/Stg_Retracement.mqh
+index 3c9cc41..5b89a80 100644
+--- a/src/strategies/Retracement/Stg_Retracement.mqh
++++ b/src/strategies/Retracement/Stg_Retracement.mqh
+@@ -115,6 +115,7 @@ struct Stg_Retracement_Params_Defaults : StgParams {
+ };
+ 
+ struct Retracement_BarOHLC : public BarOHLC {
++  Retracement_BarOHLC(const BarOHLC &_bar) : BarOHLC(_bar.open, _bar.high, _bar.low, _bar.close, _bar.time) {}
+   bool GetLevels(ENUM_PP_TYPE _type, ENUM_APPLIED_PRICE _ap, double &_pp, double &_r1, double &_r2, double &_r3,
+                  double &_r4, double &_s1, double &_s2, double &_s3, double &_s4) {
+     double _range = GetRange();
